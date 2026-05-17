@@ -73,7 +73,7 @@ resource "google_cloud_run_v2_service" "webhook" {
       }
 
       resources {
-        limits = { memory = "512Mi", cpu = "1" }
+        limits = { memory = "1Gi", cpu = "1" }
       }
     }
   }

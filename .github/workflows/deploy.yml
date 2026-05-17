@@ -59,6 +59,7 @@ jobs:
             --set-secrets="GITHUB_TOKEN=github-token:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,BLUESKY_HANDLE=bluesky-handle:latest,BLUESKY_PASSWORD=bluesky-password:latest,DATABASE_URL=database-url:latest" \
             --set-env-vars="GCP_PROJECT=${{ env.GCP_PROJECT }},GCP_REGION=${{ env.GCP_REGION }}" \
             --allow-unauthenticated \
+            --memory=1Gi \
             --min-instances=0 \
             --max-instances=2 \
             --quiet
