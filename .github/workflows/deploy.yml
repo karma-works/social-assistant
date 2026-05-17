@@ -1,0 +1,77 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  ARTIFACT_REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/social-assistant
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # for Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push webhook image
+        run: |
+          docker build -f Dockerfile.webhook \
+            -t ${{ env.ARTIFACT_REGISTRY }}/webhook:${{ github.sha }} \
+            -t ${{ env.ARTIFACT_REGISTRY }}/webhook:latest \
+            .
+          docker push ${{ env.ARTIFACT_REGISTRY }}/webhook:${{ github.sha }}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/webhook:latest
+
+      - name: Build and push pipeline image
+        run: |
+          docker build -f Dockerfile.pipeline \
+            -t ${{ env.ARTIFACT_REGISTRY }}/pipeline:${{ github.sha }} \
+            -t ${{ env.ARTIFACT_REGISTRY }}/pipeline:latest \
+            .
+          docker push ${{ env.ARTIFACT_REGISTRY }}/pipeline:${{ github.sha }}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/pipeline:latest
+
+      - name: Deploy webhook to Cloud Run
+        run: |
+          gcloud run deploy social-assistant-webhook \
+            --image ${{ env.ARTIFACT_REGISTRY }}/webhook:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --service-account sa-webhook@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com \
+            --set-secrets="GITHUB_TOKEN=github-token:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,BLUESKY_HANDLE=bluesky-handle:latest,BLUESKY_PASSWORD=bluesky-password:latest,DATABASE_URL=database-url:latest" \
+            --set-env-vars="GCP_PROJECT=${{ env.GCP_PROJECT }},GCP_REGION=${{ env.GCP_REGION }}" \
+            --allow-unauthenticated \
+            --min-instances=0 \
+            --max-instances=2 \
+            --quiet
+
+      - name: Update pipeline Cloud Run Job image
+        run: |
+          gcloud run jobs update social-assistant-pipeline \
+            --image ${{ env.ARTIFACT_REGISTRY }}/pipeline:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --quiet || \
+          gcloud run jobs create social-assistant-pipeline \
+            --image ${{ env.ARTIFACT_REGISTRY }}/pipeline:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --service-account sa-pipeline@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com \
+            --set-secrets="GITHUB_TOKEN=github-token:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,BLUESKY_HANDLE=bluesky-handle:latest,BLUESKY_PASSWORD=bluesky-password:latest,DATABASE_URL=database-url:latest" \
+            --set-env-vars="GCP_PROJECT=${{ env.GCP_PROJECT }},GCP_REGION=${{ env.GCP_REGION }}" \
+            --quiet

@@ -1,0 +1,27 @@
+gcp:
+  project: "social-assistant-496611"
+  region: "us-central1"
+  vertex_ai_location: "us-central1"
+
+github:
+  tracked_users:
+    - karma-works       # watch all public repos from karma-works
+  tracked_repos: []     # explicit additional repos (owner/repo)
+  star_jump_pct_7d: 50  # % increase in 7 days triggers a post
+  star_jump_abs_24h: 100 # absolute increase in 24h triggers a post
+  star_cooldown_days: 30 # min days between star-jump posts per repo
+
+pipeline:
+  max_qa_retries: 2
+  model: "gemini-3.1-pro-preview"
+  model_fast: "gemini-3.1-flash-lite"
+  dedup_lookback_days: 90
+
+scheduler:
+  github_cron: "0 8 * * *"   # managed by Cloud Scheduler in prod
+
+platforms:
+  bluesky:
+    enabled: true
+  x:
+    enabled: false  # Phase 2

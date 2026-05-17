@@ -1,0 +1,27 @@
+# Secrets — never commit
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Terraform state
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/environments/**/*.tfstate
+infra/environments/**/*.tfstate.backup
+infra/environments/**/terraform.tfvars  # contains project ID, not a secret but env-specific
+
+# GCP credentials
+*.json
+service-account*.json
+
+# IDE
+.idea/
+.vscode/
