@@ -6,6 +6,7 @@ on:
 env:
   GCP_PROJECT: ${{ vars.GCP_PROJECT }}
   GCP_REGION: ${{ vars.GCP_REGION }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   run:
