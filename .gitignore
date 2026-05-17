@@ -16,7 +16,7 @@ infra/.terraform/
 infra/.terraform.lock.hcl
 infra/environments/**/*.tfstate
 infra/environments/**/*.tfstate.backup
-infra/environments/**/terraform.tfvars  # contains project ID, not a secret but env-specific
+# infra/environments/**/terraform.tfvars — committed (project ID is not a secret)
 
 # GCP credentials
 *.json

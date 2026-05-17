@@ -1,5 +1,7 @@
-project       = ""           # fill in your GCP project ID
+project       = "social-assistant-496611"
 region        = "us-central1"
 env           = "dev"
-db_tier       = "db-f1-micro"
+db_tier       = "db-g1-small"
 pipeline_cron = "0 8 * * *"
+github_org    = "karma-works"
+github_repo   = "social-assistant"

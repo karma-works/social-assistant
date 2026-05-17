@@ -25,3 +25,15 @@ variable "pipeline_cron" {
   type        = string
   default     = "0 8 * * *"
 }
+
+variable "github_org" {
+  description = "GitHub organisation or user that owns the repo"
+  type        = string
+  default     = "karma-works"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name (without org prefix)"
+  type        = string
+  default     = "social-assistant"
+}
