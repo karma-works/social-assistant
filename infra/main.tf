@@ -67,6 +67,10 @@ module "secrets" {
     "bluesky-handle",
     "bluesky-password",
     "database-url",
+    "x-api-key",
+    "x-api-secret",
+    "x-access-token",
+    "x-access-token-secret",
   ]
   accessor_sa_emails = [
     module.service_accounts.webhook_email,

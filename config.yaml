@@ -24,4 +24,4 @@ platforms:
   bluesky:
     enabled: true
   x:
-    enabled: false  # Phase 2
+    enabled: true

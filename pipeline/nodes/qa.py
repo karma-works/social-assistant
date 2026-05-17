@@ -60,15 +60,33 @@ async def qa_node(state: PipelineState) -> dict:
 
     llm = _llm().with_structured_output(_QAOutput)
 
+    bluesky_draft = state.get("draft", "")
+    x_draft = state.get("x_draft", "")
+
+    # Hard char-limit checks before LLM evaluation
+    format_issues = []
+    if len(bluesky_draft) > 300:
+        format_issues.append(f"Bluesky draft exceeds 300 chars ({len(bluesky_draft)})")
+    if len(x_draft) > 280:
+        format_issues.append(f"X draft exceeds 280 chars ({len(x_draft)})")
+
     response = await llm.ainvoke([
         SystemMessage(system_prompt),
         HumanMessage(
             f"Signal:\n{_format_signal(state['active_signal'])}\n\n"
-            f"Draft:\n{state['draft']}"
+            f"Bluesky draft:\n{bluesky_draft}\n\n"
+            f"X draft:\n{x_draft}"
         ),
     ])
 
     result: QAResult = response.model_dump()
+
+    # Merge hard char-limit failures into QA result
+    if format_issues:
+        result["format_pass"] = False
+        result["format_issues"] = format_issues + result.get("format_issues", [])
+        result["overall"] = "fail"
+
     qa_feedback = _build_qa_feedback(result) if result["overall"] == "fail" else None
 
     return {

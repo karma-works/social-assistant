@@ -14,12 +14,16 @@ locals {
   ]
 
   secret_env = [
-    { name = "GITHUB_TOKEN",       secret = "github-token" },
-    { name = "TELEGRAM_BOT_TOKEN", secret = "telegram-bot-token" },
-    { name = "TELEGRAM_CHAT_ID",   secret = "telegram-chat-id" },
-    { name = "BLUESKY_HANDLE",     secret = "bluesky-handle" },
-    { name = "BLUESKY_PASSWORD",   secret = "bluesky-password" },
-    { name = "DATABASE_URL",       secret = "database-url" },
+    { name = "GITHUB_TOKEN",          secret = "github-token" },
+    { name = "TELEGRAM_BOT_TOKEN",    secret = "telegram-bot-token" },
+    { name = "TELEGRAM_CHAT_ID",      secret = "telegram-chat-id" },
+    { name = "BLUESKY_HANDLE",        secret = "bluesky-handle" },
+    { name = "BLUESKY_PASSWORD",      secret = "bluesky-password" },
+    { name = "DATABASE_URL",          secret = "database-url" },
+    { name = "X_API_KEY",             secret = "x-api-key" },
+    { name = "X_API_SECRET",          secret = "x-api-secret" },
+    { name = "X_ACCESS_TOKEN",        secret = "x-access-token" },
+    { name = "X_ACCESS_TOKEN_SECRET", secret = "x-access-token-secret" },
   ]
 }
 

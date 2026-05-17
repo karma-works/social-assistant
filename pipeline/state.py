@@ -24,7 +24,8 @@ class QAResult(TypedDict):
 class PipelineState(TypedDict):
     run_id: str                                         # == LangGraph thread_id
     active_signal: Signal
-    draft: Optional[str]                                # current post text
+    draft: Optional[str]                                # Bluesky post text (≤300 chars)
+    x_draft: Optional[str]                              # X/Twitter post text (≤280 chars)
     qa_result: Optional[QAResult]
     qa_retries: int
     qa_feedback: Optional[str]                          # injected into draft node on retry

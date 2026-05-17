@@ -26,10 +26,19 @@ about software projects and research.
 - Include the repo link
 
 ## Output format
-Return ONLY the post text. No explanations, no metadata, no quotes.
-For Bluesky: keep it under 280 characters if possible (300 is the hard limit).
-If the topic genuinely needs more space, write a 2-post thread separated by "---".
+You must return EXACTLY two sections separated by "---X---", nothing else.
+
+Section 1: Bluesky post (≤300 characters hard limit)
+Section 2: X/Twitter post (≤280 characters hard limit)
+
+Each section contains only the post text — no labels, no explanations, no metadata.
+
+Example output:
+supermuschel v0.1.0 — new Rust crate for audio fingerprinting. Handles noisy environments better than existing libs. Early stage but promising API design. github.com/example/supermuschel
+---X---
+supermuschel v0.1.0: Rust audio fingerprinting crate. Cleaner API than existing options, handles noise well. Worth watching if you work in audio. github.com/example/supermuschel
 
 ## Correction handling
-If you receive a correction instruction, apply it to the previous draft.
+If you receive a correction instruction, apply it to BOTH drafts.
 Keep what was correct; change only what the instruction targets.
+Maintain each platform's character limit after corrections.

@@ -13,13 +13,16 @@ def _bot() -> Bot:
 
 def _build_message(state: PipelineState) -> str:
     signal = state["active_signal"]
-    draft = state["draft"]
     qa: QAResult | None = state.get("qa_result")
 
     header = f"📋 *New draft — {signal['source']} / {signal['repo']}*\n\n"
-    body = f"```\n{draft}\n```"
+    body = (
+        f"🦋 *Bluesky* ({len(state.get('draft') or '')} chars)\n"
+        f"```\n{state.get('draft', '')}\n```\n\n"
+        f"𝕏 *X / Twitter* ({len(state.get('x_draft') or '')} chars)\n"
+        f"```\n{state.get('x_draft', '')}\n```"
+    )
 
-    # Surface QA warnings if present
     if qa and qa["overall"] == "warn":
         issues = "\n".join(f"• {i}" for i in qa["style_issues"])
         body += f"\n\n⚠️ *QA warnings:*\n{issues}"

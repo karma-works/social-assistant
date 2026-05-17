@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     bluesky_handle: str = ""
     bluesky_password: str = ""
 
+    # X / Twitter (OAuth 1.0a)
+    x_api_key: str = ""
+    x_api_secret: str = ""
+    x_access_token: str = ""
+    x_access_token_secret: str = ""
+
     # Pipeline (overridable via env, defaults come from config.yaml)
     model_default: str = "gemini-3.1-pro-preview"
     model_fast: str = "gemini-3.1-flash-lite"
