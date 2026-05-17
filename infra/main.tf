@@ -5,10 +5,6 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 6.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
   }
   backend "gcs" {}
 }
@@ -23,7 +19,6 @@ provider "google" {
 resource "google_project_service" "apis" {
   for_each = toset([
     "run.googleapis.com",
-    "sqladmin.googleapis.com",
     "secretmanager.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudscheduler.googleapis.com",
@@ -60,18 +55,6 @@ module "service_accounts" {
   depends_on = [google_project_service.apis, module.artifact_registry]
 }
 
-# ── Cloud SQL ────────────────────────────────────────────────────────────────
-
-module "cloud_sql" {
-  source  = "./modules/cloud-sql"
-  project = var.project
-  region  = var.region
-  name    = "${var.env}-social-assistant"
-  tier    = var.db_tier
-
-  depends_on = [google_project_service.apis]
-}
-
 # ── Secret Manager ───────────────────────────────────────────────────────────
 
 module "secrets" {
@@ -96,18 +79,16 @@ module "secrets" {
 # ── Cloud Run (Service + Job) ────────────────────────────────────────────────
 
 module "cloud_run" {
-  source             = "./modules/cloud-run"
-  project            = var.project
-  region             = var.region
-  db_connection_name = module.cloud_sql.connection_name
-  webhook_sa_email   = module.service_accounts.webhook_email
-  pipeline_sa_email  = module.service_accounts.pipeline_email
-  artifact_registry  = "${var.region}-docker.pkg.dev/${var.project}/social-assistant"
+  source            = "./modules/cloud-run"
+  project           = var.project
+  region            = var.region
+  webhook_sa_email  = module.service_accounts.webhook_email
+  pipeline_sa_email = module.service_accounts.pipeline_email
+  artifact_registry = "${var.region}-docker.pkg.dev/${var.project}/social-assistant"
 
   depends_on = [
     google_project_service.apis,
     module.service_accounts,
-    module.cloud_sql,
     module.secrets,
   ]
 }

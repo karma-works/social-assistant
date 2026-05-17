@@ -3,17 +3,6 @@ output "webhook_url" {
   value       = module.cloud_run.webhook_url
 }
 
-output "db_connection_name" {
-  description = "Cloud SQL connection name for Cloud SQL Auth Proxy"
-  value       = module.cloud_sql.connection_name
-}
-
-output "database_url" {
-  description = "DATABASE_URL secret value — store in Secret Manager"
-  value       = module.cloud_sql.database_url
-  sensitive   = true
-}
-
 output "artifact_registry_url" {
   description = "Docker registry URL"
   value       = module.artifact_registry.registry_url

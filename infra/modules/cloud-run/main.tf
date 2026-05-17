@@ -1,6 +1,5 @@
 variable "project" {}
 variable "region" {}
-variable "db_connection_name" {}
 variable "webhook_sa_email" {}
 variable "pipeline_sa_email" {}
 variable "artifact_registry" {}
@@ -36,20 +35,8 @@ resource "google_cloud_run_v2_service" "webhook" {
   template {
     service_account = var.webhook_sa_email
 
-    volumes {
-      name = "cloudsql"
-      cloud_sql_instance {
-        instances = [var.db_connection_name]
-      }
-    }
-
     containers {
       image = local.placeholder
-
-      volume_mounts {
-        name       = "cloudsql"
-        mount_path = "/cloudsql"
-      }
 
       dynamic "env" {
         for_each = local.common_env
@@ -105,20 +92,8 @@ resource "google_cloud_run_v2_job" "pipeline" {
     template {
       service_account = var.pipeline_sa_email
 
-      volumes {
-        name = "cloudsql"
-        cloud_sql_instance {
-          instances = [var.db_connection_name]
-        }
-      }
-
       containers {
         image = local.placeholder
-
-        volume_mounts {
-          name       = "cloudsql"
-          mount_path = "/cloudsql"
-        }
 
         dynamic "env" {
           for_each = local.common_env

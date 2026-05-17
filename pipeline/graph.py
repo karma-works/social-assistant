@@ -56,11 +56,14 @@ async def get_graph() -> AsyncIterator[object]:
 async def get_persistent_graph() -> AsyncIterator[object]:
     """Async context manager yielding a compiled graph backed by a connection pool (long-lived processes)."""
     settings = get_settings()
+    # setup() runs CREATE INDEX CONCURRENTLY which requires autocommit;
+    # from_conn_string uses autocommit=True so it's safe here.
+    async with AsyncPostgresSaver.from_conn_string(settings.database_url) as tmp:
+        await tmp.setup()
     pool = AsyncConnectionPool(conninfo=settings.database_url, open=False)
     await pool.open()
     try:
         checkpointer = AsyncPostgresSaver(pool)
-        await checkpointer.setup()
         yield build_graph(checkpointer)
     finally:
         await pool.close()
