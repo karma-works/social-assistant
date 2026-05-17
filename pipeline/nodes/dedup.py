@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_vertexai import ChatVertexAI
 
 from pipeline import db
+from pipeline.nodes import extract_text
 from pipeline.settings import get_config, get_settings
 from pipeline.state import Signal
 
@@ -88,7 +89,7 @@ async def _is_duplicate(signal: Signal, recent_posts: list[dict], llm: ChatVerte
     ])
 
     try:
-        result = json.loads(response.content)
+        result = json.loads(extract_text(response.content))
         return bool(result.get("is_duplicate", False))
     except (json.JSONDecodeError, AttributeError):
         return False  # parse error → keep the signal
@@ -103,4 +104,4 @@ async def _generate_topic_summary(signal: Signal, llm: ChatVertexAI) -> str:
         ),
         HumanMessage(_format_signal(signal)),
     ])
-    return str(response.content).strip()
+    return extract_text(response.content).strip()

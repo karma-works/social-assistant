@@ -182,6 +182,29 @@ async def save_thread(thread_id: str, signal_id: str) -> None:
         await conn.commit()
 
 
+async def get_pending_unstarted_signals() -> list[dict]:
+    """Return actionable signals with no LangGraph thread yet."""
+    async with get_conn() as conn:
+        rows = await conn.execute(
+            """
+            SELECT s.id, s.source, s.repo, s.topic_summary, s.raw_data, s.detected_at, s.status
+            FROM signals s
+            LEFT JOIN threads t ON t.signal_id = s.id
+            WHERE s.status = 'pending'
+              AND s.id NOT LIKE 'stars-baseline-%%'
+              AND t.thread_id IS NULL
+            ORDER BY s.detected_at ASC
+            """,
+        )
+        results = []
+        async for r in rows:
+            row = dict(r)
+            if isinstance(row.get("detected_at"), datetime):
+                row["detected_at"] = row["detected_at"].isoformat()
+            results.append(row)
+        return results
+
+
 async def get_signal_id_for_thread(thread_id: str) -> str | None:
     async with get_conn() as conn:
         row = await conn.execute(

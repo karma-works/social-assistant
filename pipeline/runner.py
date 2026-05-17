@@ -23,37 +23,46 @@ async def run_daily() -> None:
     signals = await deduplicate_signals(raw_signals)
     logger.info("%d signals after dedup", len(signals))
 
+    # Also pick up any pending signals that never had a thread started (e.g. after a crash)
+    unstarted = await db.get_pending_unstarted_signals()
+    seen_ids = {s["id"] for s in signals}
+    for s in unstarted:
+        if s["id"] not in seen_ids:
+            signals.append(s)
+    logger.info("%d signals to process (including %d recovered)", len(signals), len(unstarted))
+
     if not signals:
         logger.info("No new signals — done")
         return
 
     # 3. Start a per-signal LangGraph thread (runs until interrupt)
-    graph = await get_graph()
-
-    for signal in signals:
-        thread_id = str(uuid4())
-        await db.save_thread(thread_id, signal["id"])
-        logger.info("Starting thread %s for signal %s (%s)", thread_id, signal["id"], signal["source"])
-        try:
-            await graph.ainvoke(
-                {
-                    "run_id": thread_id,
-                    "active_signal": signal,
-                    "draft": None,
-                    "qa_result": None,
-                    "qa_retries": 0,
-                    "qa_feedback": None,
-                    "approval_status": None,
-                    "edit_instruction": None,
-                    "published_post_id": None,
-                    "error": None,
-                },
-                config={"configurable": {"thread_id": thread_id}},
+    async with get_graph() as graph:
+        for signal in signals:
+            thread_id = str(uuid4())
+            await db.save_thread(thread_id, signal["id"])
+            logger.info(
+                "Starting thread %s for signal %s (%s)",
+                thread_id, signal["id"], signal["source"],
             )
-            # Graph suspends at interrupt() in telegram_send_node — that's expected
-        except Exception:
-            logger.exception("Pipeline error for signal %s", signal["id"])
-            await db.update_signal_status(signal["id"], "discarded")
+            try:
+                await graph.ainvoke(
+                    {
+                        "run_id": thread_id,
+                        "active_signal": signal,
+                        "draft": None,
+                        "qa_result": None,
+                        "qa_retries": 0,
+                        "qa_feedback": None,
+                        "approval_status": None,
+                        "edit_instruction": None,
+                        "published_post_id": None,
+                        "error": None,
+                    },
+                    config={"configurable": {"thread_id": thread_id}},
+                )
+                # Graph suspends at interrupt() in telegram_send_node — that's expected
+            except Exception:
+                logger.exception("Pipeline error for signal %s — will retry next run", signal["id"])
 
     logger.info("Daily run complete — %d threads started", len(signals))
 

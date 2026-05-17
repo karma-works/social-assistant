@@ -1,6 +1,10 @@
 """LangGraph pipeline definition — one thread per signal."""
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
 from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool
 
 from pipeline.state import PipelineState
 from pipeline.nodes.draft import draft_node
@@ -39,9 +43,24 @@ def build_graph(checkpointer: AsyncPostgresSaver) -> object:
     return builder.compile(checkpointer=checkpointer)
 
 
-async def get_graph():
-    """Return a compiled graph with a PostgresSaver checkpointer."""
+@asynccontextmanager
+async def get_graph() -> AsyncIterator[object]:
+    """Async context manager yielding a compiled graph (short-lived, e.g. runner.py)."""
     settings = get_settings()
-    checkpointer = AsyncPostgresSaver.from_conn_string(settings.database_url)
-    await checkpointer.setup()
-    return build_graph(checkpointer)
+    async with AsyncPostgresSaver.from_conn_string(settings.database_url) as checkpointer:
+        await checkpointer.setup()
+        yield build_graph(checkpointer)
+
+
+@asynccontextmanager
+async def get_persistent_graph() -> AsyncIterator[object]:
+    """Async context manager yielding a compiled graph backed by a connection pool (long-lived processes)."""
+    settings = get_settings()
+    pool = AsyncConnectionPool(conninfo=settings.database_url, open=False)
+    await pool.open()
+    try:
+        checkpointer = AsyncPostgresSaver(pool)
+        await checkpointer.setup()
+        yield build_graph(checkpointer)
+    finally:
+        await pool.close()

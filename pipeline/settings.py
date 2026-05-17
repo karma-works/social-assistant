@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # GCP
     gcp_project: str = ""
     gcp_region: str = "us-central1"
-    vertex_ai_location: str = "us-central1"
+    vertex_ai_location: str = "global"
 
     # Database
     database_url: str = "postgresql://social:social@localhost:5432/social_assistant"

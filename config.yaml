@@ -1,7 +1,7 @@
 gcp:
   project: "social-assistant-496611"
   region: "us-central1"
-  vertex_ai_location: "us-central1"
+  vertex_ai_location: "global"
 
 github:
   tracked_users:

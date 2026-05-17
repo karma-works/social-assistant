@@ -5,6 +5,7 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_vertexai import ChatVertexAI
 
+from pipeline.nodes import extract_text
 from pipeline.settings import get_settings
 from pipeline.state import PipelineState, Signal
 
@@ -63,7 +64,7 @@ async def draft_node(state: PipelineState) -> dict:
     ])
 
     return {
-        "draft": str(response.content).strip(),
+        "draft": extract_text(response.content).strip(),
         "edit_instruction": None,
         "qa_feedback": None,
     }

@@ -8,7 +8,7 @@ from telegram import Bot, Update
 from telegram.ext import Application
 
 from pipeline import db
-from pipeline.graph import get_graph
+from pipeline.graph import get_persistent_graph
 from pipeline.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -22,17 +22,17 @@ async def lifespan(app: FastAPI):
     global _graph, _app
     settings = get_settings()
 
-    # Build LangGraph
-    _graph = await get_graph()
+    async with get_persistent_graph() as graph:
+        _graph = graph
 
-    # Build Telegram application (for update parsing only — no polling)
-    _app = Application.builder().token(settings.telegram_bot_token).build()
-    await _app.initialize()
+        # Build Telegram application (for update parsing only — no polling)
+        _app = Application.builder().token(settings.telegram_bot_token).build()
+        await _app.initialize()
 
-    yield
+        yield
 
-    if _app:
-        await _app.shutdown()
+        if _app:
+            await _app.shutdown()
 
 
 api = FastAPI(lifespan=lifespan)
