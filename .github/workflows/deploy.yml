@@ -55,6 +55,7 @@ jobs:
             --image ${{ env.ARTIFACT_REGISTRY }}/webhook:${{ github.sha }} \
             --region ${{ env.GCP_REGION }} \
             --service-account sa-webhook@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com \
+            --add-cloudsql-instances=${{ env.GCP_PROJECT }}:${{ env.GCP_REGION }}:dev-social-assistant \
             --set-secrets="GITHUB_TOKEN=github-token:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,BLUESKY_HANDLE=bluesky-handle:latest,BLUESKY_PASSWORD=bluesky-password:latest,DATABASE_URL=database-url:latest" \
             --set-env-vars="GCP_PROJECT=${{ env.GCP_PROJECT }},GCP_REGION=${{ env.GCP_REGION }}" \
             --allow-unauthenticated \
@@ -67,11 +68,13 @@ jobs:
           gcloud run jobs update social-assistant-pipeline \
             --image ${{ env.ARTIFACT_REGISTRY }}/pipeline:${{ github.sha }} \
             --region ${{ env.GCP_REGION }} \
+            --add-cloudsql-instances=${{ env.GCP_PROJECT }}:${{ env.GCP_REGION }}:dev-social-assistant \
             --quiet || \
           gcloud run jobs create social-assistant-pipeline \
             --image ${{ env.ARTIFACT_REGISTRY }}/pipeline:${{ github.sha }} \
             --region ${{ env.GCP_REGION }} \
             --service-account sa-pipeline@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com \
+            --add-cloudsql-instances=${{ env.GCP_PROJECT }}:${{ env.GCP_REGION }}:dev-social-assistant \
             --set-secrets="GITHUB_TOKEN=github-token:latest,TELEGRAM_BOT_TOKEN=telegram-bot-token:latest,TELEGRAM_CHAT_ID=telegram-chat-id:latest,BLUESKY_HANDLE=bluesky-handle:latest,BLUESKY_PASSWORD=bluesky-password:latest,DATABASE_URL=database-url:latest" \
             --set-env-vars="GCP_PROJECT=${{ env.GCP_PROJECT }},GCP_REGION=${{ env.GCP_REGION }}" \
             --quiet
