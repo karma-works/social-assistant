@@ -5,3 +5,10 @@ Cloud SQL for this small project would increase the bill about ~$25/month, becau
 --> use neon.tech instead. neon is a postgresql database running on AWS which scales to 0. Drop in replacement.
 
 Savings: ~$25/month → $0/month for the database tier.
+
+
+*Terraform is mandatory even in dev*
+
+Google Infrastrcuture is not made for manual setup. Setup via gcloud cli is error phrone.
+
+--> use Terraform MCP instead.
