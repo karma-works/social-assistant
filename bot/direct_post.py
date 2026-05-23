@@ -65,9 +65,10 @@ async def handle_publish_callback(
 
     config = get_config()
     results: list[str] = []
+    errors: list[str] = []
 
-    try:
-        if platform in ("bluesky", "both") and config.platforms.get("bluesky", {}).get("enabled", True):
+    if platform in ("bluesky", "both") and config.platforms.get("bluesky", {}).get("enabled", True):
+        try:
             post_uri = await bluesky_api.post(post["bluesky_text"])
             await db.save_post(
                 signal_id=None,
@@ -76,9 +77,13 @@ async def handle_publish_callback(
                 content=post["bluesky_text"],
                 platform_post_id=post_uri,
             )
-            results.append(f"🦋 Bluesky: {post_uri}")
+            results.append(f"🦋 Bluesky: published")
+        except Exception:
+            logger.exception("Bluesky publish failed for direct post %s", pending_id)
+            errors.append("🦋 Bluesky: failed")
 
-        if platform in ("x", "both") and config.platforms.get("x", {}).get("enabled", True):
+    if platform in ("x", "both") and config.platforms.get("x", {}).get("enabled", True):
+        try:
             tweet_id = await x_api.post(post["x_text"])
             await db.save_post(
                 signal_id=None,
@@ -88,14 +93,15 @@ async def handle_publish_callback(
                 platform_post_id=tweet_id,
             )
             results.append(f"𝕏 X: https://x.com/i/web/status/{tweet_id}")
-    except Exception:
-        logger.exception("Failed to publish direct post %s", pending_id)
-        await edit_message("Publishing failed — check logs.")
-        return
-    finally:
-        await db.delete_direct_post(pending_id)
+        except Exception:
+            logger.exception("X publish failed for direct post %s", pending_id)
+            errors.append("𝕏 X: failed (check API plan)")
 
-    if results:
-        await edit_message("Published!\n" + "\n".join(results))
-    else:
+    await db.delete_direct_post(pending_id)
+
+    lines = results + errors
+    if not lines:
         await edit_message("No platforms are enabled — check config.yaml.")
+    else:
+        status = "Published!" if not errors else ("Partial failure:" if results else "Failed:")
+        await edit_message(status + "\n" + "\n".join(lines))
