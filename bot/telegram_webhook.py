@@ -7,6 +7,7 @@ from langgraph.types import Command
 from telegram import Bot, Update
 from telegram.ext import Application
 
+from bot import direct_post
 from pipeline import db
 from pipeline.graph import get_persistent_graph
 from pipeline.settings import get_settings
@@ -50,6 +51,20 @@ async def telegram_webhook(request: Request) -> Response:
         await query.answer()
 
         callback_data = query.data or ""
+
+        # --- Direct post platform selection ---
+        if callback_data.startswith("direct:"):
+            _, pending_id, platform = callback_data.split(":", 2)
+            if platform == "cancel":
+                await db.delete_direct_post(pending_id)
+                await query.edit_message_text("Cancelled.")
+            else:
+                await direct_post.handle_publish_callback(
+                    pending_id, platform, query.edit_message_text
+                )
+            return Response(status_code=200)
+
+        # --- Pipeline approval flow ---
         parts = callback_data.split(":", 1)
         if len(parts) != 2:
             return Response(status_code=200)
@@ -67,18 +82,19 @@ async def telegram_webhook(request: Request) -> Response:
                 "Send me your correction as a reply and I'll regenerate the draft."
             )
 
-    # ---------- Text message (edit instruction) ----------
+    # ---------- Text message ----------
     elif update.message and update.message.text:
         text = update.message.text
 
-        # Find if there's a pending edit for any thread
-        # Simplified: last pending edit wins (single-user system)
+        # If there's a pending edit for a pipeline thread, route there first
         thread_id = await _find_pending_edit_thread()
         if thread_id:
             await _resume_graph(thread_id, {"action": "edit", "instruction": text})
             await update.message.reply_text("Draft regeneration started!")
-            # Clear the pending edit marker
             await db.update_signal_status(f"edit_pending:{thread_id}", "discarded")
+        else:
+            # Direct post: show platform preview
+            await direct_post.handle_incoming_message(text, update.message.reply_text)
 
     return Response(status_code=200)
 

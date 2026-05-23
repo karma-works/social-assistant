@@ -122,7 +122,7 @@ async def known_repos(user: str) -> set[str]:
 
 async def save_post(
     *,
-    signal_id: str,
+    signal_id: str | None,
     platform: str,
     topic_summary: str,
     content: str,
@@ -213,3 +213,35 @@ async def get_signal_id_for_thread(thread_id: str) -> str | None:
         )
         result = await row.fetchone()
         return result["signal_id"] if result else None
+
+
+# ---------------------------------------------------------------------------
+# Direct posts (user-initiated via Telegram)
+# ---------------------------------------------------------------------------
+
+async def save_direct_post(pending_id: str, bluesky_text: str, x_text: str) -> None:
+    async with get_conn() as conn:
+        await conn.execute(
+            """
+            INSERT INTO direct_posts (id, bluesky_text, x_text, created_at)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (pending_id, bluesky_text, x_text, datetime.now(timezone.utc)),
+        )
+        await conn.commit()
+
+
+async def get_direct_post(pending_id: str) -> dict | None:
+    async with get_conn() as conn:
+        row = await conn.execute(
+            "SELECT bluesky_text, x_text FROM direct_posts WHERE id = %s",
+            (pending_id,),
+        )
+        result = await row.fetchone()
+        return dict(result) if result else None
+
+
+async def delete_direct_post(pending_id: str) -> None:
+    async with get_conn() as conn:
+        await conn.execute("DELETE FROM direct_posts WHERE id = %s", (pending_id,))
+        await conn.commit()
